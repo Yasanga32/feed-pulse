@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { Feedback } from "../models/feedback.model.js";
-import { analyzeFeedback } from "../services/gemini.service.js";
+import { analyzeFeedback, analyzeSummary } from "../services/gemini.service.js";
 
 export const createFeedback = async (req: Request, res: Response) => {
     try {
@@ -152,3 +152,42 @@ export const deleteFeedback = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, message: error.message })
     }
 }
+
+export const getFeedbackSummary = async (req: Request, res: Response) => {
+  try {
+    // last 7 days date
+    const lastWeek = new Date();
+    lastWeek.setDate(lastWeek.getDate() - 7);
+
+    // get feedback from last 7 days
+    const feedback = await Feedback.find({
+      createdAt: { $gte: lastWeek }
+    });
+
+    if (!feedback.length) {
+      return res.status(200).json({
+        success: true,
+        data: "No feedback in last 7 days"
+      });
+    }
+
+    // combine all feedback
+    const combinedText = feedback
+      .map(f => `Title: ${f.title}\nDescription: ${f.description}`)
+      .join("\n\n");
+
+    // send to gemini
+    const summary = await analyzeSummary(combinedText);
+
+    res.status(200).json({
+      success: true,
+      data: summary
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error generating summary"
+    });
+  }
+};
