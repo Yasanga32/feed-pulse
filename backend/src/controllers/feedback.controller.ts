@@ -1,19 +1,27 @@
 import { Request, Response } from "express";
 import { Feedback } from "../models/feedback.model.js";
+import { analyzeFeedback } from "../services/gemini.service.js";
 
 
 export const createFeedback = async (req: Request, res: Response) => {
     try {
         const { title, description, category, submitterName, submitterEmail } = req.body;
+
         if (!title || !description || !category) {
-            return res.status(400).json({ success: false, message: "Please provide all the required field" })
+            return res.status(400).json({
+                success: false,
+                message: "Please provide all the required field"
+            });
         }
 
         if (description.length < 20) {
-            return res.status(400).json({ success: false, message: "Description must be at least 20 characters long" })
+            return res.status(400).json({
+                success: false,
+                message: "Description must be at least 20 characters long"
+            });
         }
 
-        //creating feedback in db
+        // creating feedback in db
         const feedback = await Feedback.create({
             title,
             description,
@@ -22,6 +30,7 @@ export const createFeedback = async (req: Request, res: Response) => {
             submitterEmail
         });
 
+
         res.status(201).json({
             success: true,
             message: "Feedback created successfully",
@@ -29,8 +38,29 @@ export const createFeedback = async (req: Request, res: Response) => {
         });
 
 
+        try {
+            const analysis = await analyzeFeedback(title, description);
+
+            if (analysis) {
+                await Feedback.findByIdAndUpdate(feedback._id, {
+                    ai_category: analysis.category,
+                    ai_sentiment: analysis.sentiment,
+                    ai_priority: analysis.priority_score,
+                    ai_summary: analysis.summary,
+                    ai_tags: analysis.tags,
+                    ai_processed: true
+                });
+            }
+
+        } catch (error: any) {
+            console.log("AI Error in background:", error.message);
+        }
+
     } catch (error: any) {
-        res.status(500).json({ success: false, message: error.message })
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 }
 
