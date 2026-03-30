@@ -1,19 +1,26 @@
 import { Request, Response } from "express";
 import { Feedback } from "../models/feedback.model.js";
-
+import { analyzeFeedback, analyzeSummary } from "../services/gemini.service.js";
 
 export const createFeedback = async (req: Request, res: Response) => {
     try {
         const { title, description, category, submitterName, submitterEmail } = req.body;
+
         if (!title || !description || !category) {
-            return res.status(400).json({ success: false, message: "Please provide all the required field" })
+            return res.status(400).json({
+                success: false,
+                message: "Please provide all the required field"
+            });
         }
 
         if (description.length < 20) {
-            return res.status(400).json({ success: false, message: "Description must be at least 20 characters long" })
+            return res.status(400).json({
+                success: false,
+                message: "Description must be at least 20 characters long"
+            });
         }
 
-        //creating feedback in db
+        // creating feedback in db
         const feedback = await Feedback.create({
             title,
             description,
@@ -22,15 +29,47 @@ export const createFeedback = async (req: Request, res: Response) => {
             submitterEmail
         });
 
+        // Run AI analysis BEFORE sending response
+        try {
+            const analysis = await analyzeFeedback(title, description);
+
+            if (analysis) {
+                const updated = await Feedback.findByIdAndUpdate(
+                    feedback._id,
+                    {
+                        ai_category: analysis.category,
+                        ai_sentiment: analysis.sentiment,
+                        ai_priority: analysis.priority_score,
+                        ai_summary: analysis.summary,
+                        ai_tags: analysis.tags,
+                        ai_processed: true
+                    },
+                    { new: true }
+                );
+
+                return res.status(201).json({
+                    success: true,
+                    message: "Feedback created successfully",
+                    data: updated
+                });
+            }
+
+        } catch (aiError: any) {
+            console.error("AI analysis failed:", aiError.message);
+        }
+
+        // Fallback: return basic feedback if AI failed
         res.status(201).json({
             success: true,
             message: "Feedback created successfully",
             data: feedback
         });
 
-
     } catch (error: any) {
-        res.status(500).json({ success: false, message: error.message })
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 }
 
@@ -150,3 +189,42 @@ export const deleteFeedback = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, message: error.message })
     }
 }
+
+export const getFeedbackSummary = async (req: Request, res: Response) => {
+  try {
+    // last 7 days date
+    const lastWeek = new Date();
+    lastWeek.setDate(lastWeek.getDate() - 7);
+
+    // get feedback from last 7 days
+    const feedback = await Feedback.find({
+      createdAt: { $gte: lastWeek }
+    });
+
+    if (!feedback.length) {
+      return res.status(200).json({
+        success: true,
+        data: "No feedback in last 7 days"
+      });
+    }
+
+    // combine all feedback
+    const combinedText = feedback
+      .map(f => `Title: ${f.title}\nDescription: ${f.description}`)
+      .join("\n\n");
+
+    // send to gemini
+    const summary = await analyzeSummary(combinedText);
+
+    res.status(200).json({
+      success: true,
+      data: summary
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error generating summary"
+    });
+  }
+};

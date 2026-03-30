@@ -36,10 +36,22 @@ const feedbackSchema = new mongoose.Schema(
 
         // AI fields
         ai_category: String,
-        ai_sentiment: String,
-        ai_priority: Number,
+
+        ai_sentiment: {
+            type: String,
+            enum: ["Positive", "Neutral", "Negative"]
+        },
+
+        ai_priority: {
+            type: Number,
+            min: 1,
+            max: 10
+        },
+
         ai_summary: String,
+
         ai_tags: [String],
+
         ai_processed: {
             type: Boolean,
             default: false
