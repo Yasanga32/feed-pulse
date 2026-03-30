@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { connectDB } from './utils/db.js';
 import feedbackRouter from './routes/feedback.routes.js';
+import authRoutes from "./routes/auth.routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -24,6 +25,7 @@ const startServer = async () => {
 
 //routes
 app.use('/api/feedback', feedbackRouter);
+app.use("/api/auth", authRoutes);
 
 startServer();
 
