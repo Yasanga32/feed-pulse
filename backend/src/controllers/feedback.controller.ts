@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { Feedback } from "../models/feedback.model.js";
 import { analyzeFeedback } from "../services/gemini.service.js";
 
-
 export const createFeedback = async (req: Request, res: Response) => {
     try {
         const { title, description, category, submitterName, submitterEmail } = req.body;
@@ -30,31 +29,41 @@ export const createFeedback = async (req: Request, res: Response) => {
             submitterEmail
         });
 
+        // Run AI analysis BEFORE sending response
+        try {
+            const analysis = await analyzeFeedback(title, description);
 
+            if (analysis) {
+                const updated = await Feedback.findByIdAndUpdate(
+                    feedback._id,
+                    {
+                        ai_category: analysis.category,
+                        ai_sentiment: analysis.sentiment,
+                        ai_priority: analysis.priority_score,
+                        ai_summary: analysis.summary,
+                        ai_tags: analysis.tags,
+                        ai_processed: true
+                    },
+                    { new: true }
+                );
+
+                return res.status(201).json({
+                    success: true,
+                    message: "Feedback created successfully",
+                    data: updated
+                });
+            }
+
+        } catch (aiError: any) {
+            console.error("AI analysis failed:", aiError.message);
+        }
+
+        // Fallback: return basic feedback if AI failed
         res.status(201).json({
             success: true,
             message: "Feedback created successfully",
             data: feedback
         });
-
-
-        try {
-            const analysis = await analyzeFeedback(title, description);
-
-            if (analysis) {
-                await Feedback.findByIdAndUpdate(feedback._id, {
-                    ai_category: analysis.category,
-                    ai_sentiment: analysis.sentiment,
-                    ai_priority: analysis.priority_score,
-                    ai_summary: analysis.summary,
-                    ai_tags: analysis.tags,
-                    ai_processed: true
-                });
-            }
-
-        } catch (error: any) {
-            console.log("AI Error in background:", error.message);
-        }
 
     } catch (error: any) {
         res.status(500).json({
