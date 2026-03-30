@@ -63,4 +63,10 @@ const feedbackSchema = new mongoose.Schema(
     }
 );
 
+
+feedbackSchema.index({ status: 1 });
+feedbackSchema.index({ category: 1 });
+feedbackSchema.index({ ai_priority: -1 });
+feedbackSchema.index({ createdAt: -1 });
+
 export const Feedback = mongoose.model("Feedback", feedbackSchema);

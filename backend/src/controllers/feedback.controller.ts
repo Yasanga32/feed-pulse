@@ -169,8 +169,10 @@ export const updateFeedback = async (req: Request, res: Response) => {
 }
 
 export const deleteFeedback = async (req: Request, res: Response) => {
+    console.log("DELETE CONTROLLER HIT");
     try {
         const { id } = req.params;
+        console.log("Delete Feedback Controller triggered for ID:", id);
         const feedback = await Feedback.findByIdAndDelete(id);
 
         if (!feedback) {
