@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { connectDB } from './utils/db.js';
+import feedbackRouter from './routes/feedback.routes.js';
 
 dotenv.config();
 
@@ -23,4 +24,9 @@ const startServer = async () => {
   });
 };
 
+//routes
+app.use('/api/feedback', feedbackRouter);
+
 startServer();
+
+export default app;
