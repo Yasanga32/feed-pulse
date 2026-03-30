@@ -36,14 +36,51 @@ export const createFeedback = async (req: Request, res: Response) => {
 
 export const getFeedbacks = async (req: Request, res: Response) => {
     try {
-        const feedbacks = await Feedback.find();
+
+        const { category, status, page = 1, limit = 10, sort } = req.query;
+
+        // Filtering
+        const filter: any = {};
+
+        if (category) {
+            filter.category = category;
+        }
+
+        if (status) {
+            filter.status = status;
+        }
+
+        // Sorting
+        let sortOption: any = { createdAt: -1 };
+
+        if (sort === "priority") {
+            sortOption = { ai_priority: -1 };
+        }
+
+        if (sort === "date") {
+            sortOption = { createdAt: -1 };
+        }
+
+        // Pagination
+        const pageNumber = Number(page);
+        const limitNumber = Number(limit);
+
+        const feedbacks = await Feedback.find(filter)
+            .sort(sortOption)
+            .skip((pageNumber - 1) * limitNumber)
+            .limit(limitNumber);
+
         res.status(200).json({
             success: true,
             message: "Feedbacks fetched successfully",
             data: feedbacks
         });
+
     } catch (error: any) {
-        res.status(500).json({ success: false, message: error.message })
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
     }
 }
 
