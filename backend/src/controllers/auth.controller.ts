@@ -16,6 +16,8 @@ export const adminLogin = async (req: Request, res: Response) => {
         if (!email || !password) {
             return res.status(400).json({
                 success: false,
+                data: null,
+                error: "Bad Request",
                 message: "Email and password required"
             });
         }
@@ -25,6 +27,8 @@ export const adminLogin = async (req: Request, res: Response) => {
             console.log("Login failed: Mismatching credentials");
             return res.status(401).json({
                 success: false,
+                data: null,
+                error: "Unauthorized",
                 message: "Invalid credentials"
             });
         }
@@ -38,13 +42,16 @@ export const adminLogin = async (req: Request, res: Response) => {
 
         res.status(200).json({
             success: true,
-            message: "Login successful",
-            token
+            data: { token },
+            error: null,
+            message: "Login successful"
         });
 
     } catch (error: any) {
         res.status(500).json({
             success: false,
+            data: null,
+            error: error.name || "Internal Server Error",
             message: error.message
         });
     }
