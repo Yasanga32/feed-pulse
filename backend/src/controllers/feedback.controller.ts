@@ -37,7 +37,7 @@ export const createFeedback = async (req: Request, res: Response) => {
 export const getFeedbacks = async (req: Request, res: Response) => {
     try {
 
-        const { category, status, page = 1, limit = 10, sort } = req.query;
+        const { category, status, page = 1, limit = 10, sort, search } = req.query;
 
         // Filtering
         const filter: any = {};
@@ -48,6 +48,14 @@ export const getFeedbacks = async (req: Request, res: Response) => {
 
         if (status) {
             filter.status = status;
+        }
+
+        // Simple Search
+        if (search){
+            filter.$or = [
+                { title: { $regex: search, $options: "i" } },
+                { ai_summary: { $regex: search, $options: "i" } }
+            ];
         }
 
         // Sorting
