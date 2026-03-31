@@ -44,7 +44,7 @@ export const createFeedback = async (req: Request, res: Response) => {
                         ai_tags: analysis.tags,
                         ai_processed: true
                     },
-                    { new: true }
+                    { returnDocument: "after" }
                 );
 
                 return res.status(201).json({
