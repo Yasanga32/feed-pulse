@@ -76,7 +76,7 @@ export const createFeedback = async (req: Request, res: Response) => {
 export const getFeedbacks = async (req: Request, res: Response) => {
     try {
 
-        const { category, status, page = 1, limit = 10, sort } = req.query;
+        const { category, status, page = 1, limit = 10, sort, search } = req.query;
 
         // Filtering
         const filter: any = {};
@@ -87,6 +87,14 @@ export const getFeedbacks = async (req: Request, res: Response) => {
 
         if (status) {
             filter.status = status;
+        }
+
+        // Simple Search
+        if (search){
+            filter.$or = [
+                { title: { $regex: search, $options: "i" } },
+                { ai_summary: { $regex: search, $options: "i" } }
+            ];
         }
 
         // Sorting
@@ -122,6 +130,55 @@ export const getFeedbacks = async (req: Request, res: Response) => {
         })
     }
 }
+
+
+
+export const getFeedbackStats = async (req:Request, res:Response) => {
+  try {
+    const total = await Feedback.countDocuments();
+
+    const open = await Feedback.countDocuments({
+      status: "New"
+    });
+
+    const avgPriority = await Feedback.aggregate([
+      {
+        $group: {
+          _id: null,
+          avg: { $avg: "$ai_priority" }
+        }
+      }
+    ]);
+
+    const topTags = await Feedback.aggregate([
+      { $unwind: "$ai_tags" },
+      {
+        $group: {
+          _id: "$ai_tags",
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } },
+      { $limit: 1 }
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        total,
+        open,
+        average_priority: avgPriority[0]?.avg || 0,
+        most_common_tag: topTags[0]?._id || null
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch stats"
+    });
+  }
+};
 
 
 export const getFeedbackById = async (req: Request, res: Response) => {

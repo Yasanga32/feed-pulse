@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createFeedback, deleteFeedback, getFeedbackById, getFeedbacks, getFeedbackSummary, updateFeedback } from "../controllers/feedback.controller.js";
+import { createFeedback, deleteFeedback, getFeedbackById, getFeedbacks, getFeedbackStats, getFeedbackSummary, updateFeedback } from "../controllers/feedback.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { feedbackLimiter } from "../middleware/rateLimit.middleware.js";
 
@@ -11,6 +11,7 @@ feedbackRouter.post("/", feedbackLimiter ,createFeedback);
 feedbackRouter.get("/", getFeedbacks);
 
 feedbackRouter.get("/summary", getFeedbackSummary);
+feedbackRouter.get("/stats", getFeedbackStats);
 
 //dynamic routes
 feedbackRouter.get("/:id", getFeedbackById);
