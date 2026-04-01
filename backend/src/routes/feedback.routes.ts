@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { createFeedback, deleteFeedback, getFeedbackById, getFeedbacks, getFeedbackStats, getFeedbackSummary, updateFeedback } from "../controllers/feedback.controller.js";
+import { body } from "express-validator";
+import { createFeedback, deleteFeedback, getFeedbackById, getFeedbacks, getFeedbackStats, getFeedbackSummary, reAnalyzeFeedback, updateFeedback } from "../controllers/feedback.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { feedbackLimiter } from "../middleware/rateLimit.middleware.js";
 
@@ -7,16 +8,34 @@ const feedbackRouter = Router();
 
 console.log("FeedbackRouter: authMiddleware is:", typeof authMiddleware);
 
-feedbackRouter.post("/", feedbackLimiter ,createFeedback);
-feedbackRouter.get("/", getFeedbacks);
+const feedbackValidator = [
+    body("title")
+        .trim()
+        .notEmpty().withMessage("Title is required")
+        .escape(),
+    body("description")
+        .trim()
+        .isLength({ min: 20 }).withMessage("Description must be at least 20 characters long")
+        .escape(),
+    body("category")
+        .trim()
+        .notEmpty().withMessage("Category is required")
+        .escape(),
+    body("submitterName").optional().trim().escape(),
+    body("submitterEmail").optional().trim().isEmail().withMessage("Invalid email format").escape()
+];
 
-feedbackRouter.get("/summary", getFeedbackSummary);
-feedbackRouter.get("/stats", getFeedbackStats);
+feedbackRouter.post("/", feedbackLimiter, feedbackValidator, createFeedback);
+feedbackRouter.get("/", authMiddleware, getFeedbacks);
+
+feedbackRouter.get("/summary", authMiddleware, getFeedbackSummary);
+feedbackRouter.get("/stats", authMiddleware, getFeedbackStats);
 
 //dynamic routes
-feedbackRouter.get("/:id", getFeedbackById);
-feedbackRouter.patch("/:id", updateFeedback);
-feedbackRouter.delete("/:id", deleteFeedback);
+feedbackRouter.post("/:id/analyze", authMiddleware, reAnalyzeFeedback);
+feedbackRouter.get("/:id", authMiddleware, getFeedbackById);
+feedbackRouter.patch("/:id", authMiddleware, updateFeedback);
+feedbackRouter.delete("/:id", authMiddleware, deleteFeedback);
 
 
 
