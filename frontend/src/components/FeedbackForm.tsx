@@ -62,9 +62,9 @@ export default function FeedbackForm() {
         setError(response.message || "Failed to submit feedback");
       }
     } catch (error: unknown) {
-  console.error("Submission error:", error);
-  setError("Failed to submit feedback");
-} finally {
+      console.error("Submission error:", error);
+      setError("Failed to submit feedback");
+    } finally {
       setLoading(false);
     }
   };
@@ -111,7 +111,7 @@ export default function FeedbackForm() {
             placeholder="A short summary of your feedback..."
             value={formData.title}
             onChange={handleChange}
-            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 outline-none transition-all focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:border-blue-400"
+            className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-black outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white dark:focus:border-blue-400"
           />
         </div>
 
@@ -125,7 +125,7 @@ export default function FeedbackForm() {
             name="category"
             value={formData.category}
             onChange={handleChange}
-            className="w-full cursor-pointer rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 outline-none transition-all focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:border-blue-400"
+            className="w-full cursor-pointer rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-black outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white dark:focus:border-blue-400"
           >
             <option value="Bug">Bug Report</option>
             <option value="Feature Request">Feature Request</option>
@@ -152,7 +152,7 @@ export default function FeedbackForm() {
             placeholder="Please provide details about your suggestion or the problem you encountered..."
             value={formData.description}
             onChange={handleChange}
-            className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 outline-none transition-all focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:border-blue-400"
+            className="w-full resize-none rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-black outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white dark:focus:border-blue-400"
           />
         </div>
 
@@ -169,7 +169,7 @@ export default function FeedbackForm() {
               placeholder="Full name"
               value={formData.submitterName}
               onChange={handleChange}
-              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 outline-none transition-all focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:border-blue-400"
+              className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-black outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white dark:focus:border-blue-400"
             />
           </div>
           <div>
@@ -183,7 +183,7 @@ export default function FeedbackForm() {
               placeholder="email@example.com"
               value={formData.submitterEmail}
               onChange={handleChange}
-              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 outline-none transition-all focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:border-blue-400"
+              className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-black outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white dark:focus:border-blue-400"
             />
           </div>
         </div>

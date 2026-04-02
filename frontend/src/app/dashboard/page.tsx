@@ -17,6 +17,14 @@ interface Stats {
   mostCommonTag: string;
 }
 
+interface QueryParams {
+  page: number;
+  limit: number;
+  sort: string;
+  category?: string;
+  status?: string;
+}
+
 export default function DashboardPage() {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [stats, setStats] = useState<Stats>({
@@ -51,17 +59,17 @@ export default function DashboardPage() {
     setError(null);
 
     try {
-      // Build query params - only include if not "All" or empty
-      const queryParams: any = {
+      // Build query params
+      const queryParams: QueryParams = {
         page: currentPage,
         limit: 10,
         sort: sort
       };
+
       if (category !== "All") queryParams.category = category;
       if (status !== "") queryParams.status = status;
 
       // Fetch both stats and feedback list
-      // Note: stats are global, but feedback is filtered
       const [statsRes, feedbackRes] = await Promise.all([
         getStats(token),
         getFeedbacks(token, queryParams),
@@ -77,7 +85,6 @@ export default function DashboardPage() {
       }
 
       if (feedbackRes.success) {
-        // Updated data structure handling
         setFeedbacks(feedbackRes.data.feedbacks);
         setTotalPages(feedbackRes.data.pagination.totalPages);
       }
@@ -85,6 +92,7 @@ export default function DashboardPage() {
       if (!statsRes.success || !feedbackRes.success) {
         setError("Failed to fetch some dashboard data.");
       }
+
     } catch (err: unknown) {
       setError("An error occurred while connecting to the backend.");
       console.error("Dashboard Fetch Error:", err);
@@ -93,12 +101,12 @@ export default function DashboardPage() {
     }
   }, [category, status, sort, currentPage, router]);
 
-  // Re-fetch whenever filters, sort or page changes
+  // Re-fetch whenever filters change
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // Reset to page 1 when filters or sort change
+  // Reset to page 1 when filters change
   const handleCategoryChange = (val: string) => {
     setCategory(val);
     setCurrentPage(1);
@@ -114,10 +122,10 @@ export default function DashboardPage() {
     setCurrentPage(1);
   };
 
-  // Handle local deletion for optimistic UI
+  // Handle delete
   const handleDeleteFeedback = (id: string) => {
     setFeedbacks((prev) => prev.filter((item) => item._id !== id));
-    // Also update stats locally
+
     setStats((prev) => ({
       ...prev,
       totalFeedback: prev.totalFeedback - 1,
@@ -129,7 +137,10 @@ export default function DashboardPage() {
       <div className="flex h-[80vh] w-full flex-col items-center justify-center gap-4">
         <div className="relative">
           <div className="h-16 w-16 animate-spin rounded-full border-4 border-zinc-200 border-t-blue-600"></div>
-          <Loader2 className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-blue-600 animate-pulse" size={24} />
+          <Loader2
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-blue-600 animate-pulse"
+            size={24}
+          />
         </div>
         <p className="text-zinc-500 font-medium">
           Loading FeedPulse insights...
@@ -179,10 +190,10 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="space-y-12">
-          {/* Stats Section */}
+          {/* Stats */}
           <StatsBar stats={stats} />
 
-          {/* Filtering Section */}
+          {/* Filters */}
           <FilterBar
             selectedCategory={category}
             onCategoryChange={handleCategoryChange}
@@ -192,7 +203,7 @@ export default function DashboardPage() {
             onSortChange={handleSortChange}
           />
 
-          {/* Feedback List Section */}
+          {/* Feedback Section */}
           <div>
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
@@ -203,6 +214,7 @@ export default function DashboardPage() {
                   </span>
                 )}
               </h2>
+
               <span className="text-sm font-medium text-zinc-500">
                 {stats.totalFeedback} total items
               </span>
@@ -213,13 +225,20 @@ export default function DashboardPage() {
                 <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100 text-zinc-400 dark:bg-zinc-800">
                   <Filter size={32} />
                 </div>
-                <p className="text-lg font-semibold text-zinc-900 dark:text-white">No results found</p>
-                <p className="mt-1 text-zinc-500 text-sm">
-                  Try adjusting your filters to find what you&apos;re looking for.
+                <p className="text-lg font-semibold text-zinc-900 dark:text-white">
+                  No results found
                 </p>
+                <p className="mt-1 text-zinc-500 text-sm">
+                  Try adjusting your filters.
+                </p>
+
                 {(category !== "All" || status !== "") && (
                   <button
-                    onClick={() => { setCategory("All"); setStatus(""); setCurrentPage(1); }}
+                    onClick={() => {
+                      setCategory("All");
+                      setStatus("");
+                      setCurrentPage(1);
+                    }}
                     className="mt-6 text-sm font-bold text-blue-600 hover:underline"
                   >
                     Clear all filters
@@ -229,7 +248,6 @@ export default function DashboardPage() {
             ) : (
               <>
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 relative">
-                  {/* Visual indicator when reloading existing list */}
                   {loading && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/40 backdrop-blur-[1px] dark:bg-black/40">
                       <Loader2 className="animate-spin text-blue-600" size={32} />
@@ -245,7 +263,6 @@ export default function DashboardPage() {
                   ))}
                 </div>
 
-                {/* Pagination Controls */}
                 <Pagination
                   currentPage={currentPage}
                   totalPages={totalPages}
