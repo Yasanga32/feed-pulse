@@ -61,10 +61,10 @@ export default function FeedbackForm() {
       } else {
         setError(response.message || "Failed to submit feedback");
       }
-    } catch (error) {
-      console.error("Submission error:", error);
-      setError("An unexpected error occurred. Please check your internet connection or try again later.");
-    } finally {
+    } catch (error: unknown) {
+  console.error("Submission error:", error);
+  setError("Failed to submit feedback");
+} finally {
       setLoading(false);
     }
   };

@@ -22,7 +22,7 @@ const feedbackValidator = [
         .notEmpty().withMessage("Category is required")
         .escape(),
     body("submitterName").optional().trim().escape(),
-    body("submitterEmail").optional().trim().isEmail().withMessage("Invalid email format").escape()
+    body("submitterEmail").optional({ checkFalsy: true }).trim().isEmail().withMessage("Invalid email format").escape()
 ];
 
 feedbackRouter.post("/", feedbackLimiter, feedbackValidator, createFeedback);
