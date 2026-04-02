@@ -1,18 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getFeedbacks, getStats } from "@/lib/api";
 import { Feedback } from "@/types/feedback";
 import StatsBar from "@/components/dashboard/StatsBar";
 import FeedbackCard from "@/components/dashboard/FeedbackCard";
-import { LayoutDashboard, Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import FilterBar from "@/components/dashboard/FilterBar";
+import Pagination from "@/components/dashboard/Pagination";
+import { LayoutDashboard, Loader2, AlertCircle, RefreshCw, Filter } from "lucide-react";
 
 interface Stats {
   totalFeedback: number;
   openItems: number;
   avgPriority: number;
   mostCommonTag: string;
+}
+
+interface QueryParams {
+  page: number;
+  limit: number;
+  sort: string;
+  category?: string;
+  status?: string;
 }
 
 export default function DashboardPage() {
@@ -26,9 +36,18 @@ export default function DashboardPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Filtering & Pagination states
+  const [category, setCategory] = useState("All");
+  const [status, setStatus] = useState("");
+  const [sort, setSort] = useState("date");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   const router = useRouter();
 
-  const fetchData = async () => {
+  // Optimized fetchData with optional parameters
+  const fetchData = useCallback(async (isRefresh = false) => {
     const token = localStorage.getItem("token");
 
     if (!token) {
@@ -40,13 +59,22 @@ export default function DashboardPage() {
     setError(null);
 
     try {
+      // Build query params
+      const queryParams: QueryParams = {
+        page: currentPage,
+        limit: 10,
+        sort: sort
+      };
+
+      if (category !== "All") queryParams.category = category;
+      if (status !== "") queryParams.status = status;
+
       // Fetch both stats and feedback list
       const [statsRes, feedbackRes] = await Promise.all([
         getStats(token),
-        getFeedbacks(token),
+        getFeedbacks(token, queryParams),
       ]);
 
-      // Map backend response to frontend format
       if (statsRes.success) {
         setStats({
           totalFeedback: statsRes.data.total,
@@ -57,30 +85,65 @@ export default function DashboardPage() {
       }
 
       if (feedbackRes.success) {
-        setFeedbacks(feedbackRes.data);
+        setFeedbacks(feedbackRes.data.feedbacks);
+        setTotalPages(feedbackRes.data.pagination.totalPages);
       }
 
       if (!statsRes.success || !feedbackRes.success) {
         setError("Failed to fetch some dashboard data.");
       }
+
     } catch (err: unknown) {
       setError("An error occurred while connecting to the backend.");
       console.error("Dashboard Fetch Error:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [category, status, sort, currentPage, router]);
 
+  // Re-fetch whenever filters change
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
-  if (loading) {
+  // Reset to page 1 when filters change
+  const handleCategoryChange = (val: string) => {
+    setCategory(val);
+    setCurrentPage(1);
+  };
+
+  const handleStatusChange = (val: string) => {
+    setStatus(val);
+    setCurrentPage(1);
+  };
+
+  const handleSortChange = (val: string) => {
+    setSort(val);
+    setCurrentPage(1);
+  };
+
+  // Handle delete
+  const handleDeleteFeedback = (id: string) => {
+    setFeedbacks((prev) => prev.filter((item) => item._id !== id));
+
+    setStats((prev) => ({
+      ...prev,
+      totalFeedback: prev.totalFeedback - 1,
+    }));
+  };
+
+  if (loading && feedbacks.length === 0) {
     return (
       <div className="flex h-[80vh] w-full flex-col items-center justify-center gap-4">
-        <Loader2 className="animate-spin text-blue-600" size={40} />
+        <div className="relative">
+          <div className="h-16 w-16 animate-spin rounded-full border-4 border-zinc-200 border-t-blue-600"></div>
+          <Loader2
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-blue-600 animate-pulse"
+            size={24}
+          />
+        </div>
         <p className="text-zinc-500 font-medium">
-          Loading your dashboard...
+          Loading FeedPulse insights...
         </p>
       </div>
     );
@@ -101,10 +164,10 @@ export default function DashboardPage() {
         </div>
 
         <button
-          onClick={fetchData}
-          className="flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold transition-all hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+          onClick={() => fetchData(true)}
+          className="flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold transition-all hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800 active:scale-95"
         >
-          <RefreshCw size={14} />
+          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           Sync Data
         </button>
       </div>
@@ -119,7 +182,7 @@ export default function DashboardPage() {
             {error}
           </p>
           <button
-            onClick={fetchData}
+            onClick={() => fetchData(true)}
             className="mt-6 rounded-full bg-zinc-900 px-6 py-2.5 text-sm font-bold text-white dark:bg-white dark:text-black"
           >
             Try Again
@@ -127,32 +190,85 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="space-y-12">
-          {/* Stats Section */}
+          {/* Stats */}
           <StatsBar stats={stats} />
 
-          {/* Feedback List Section */}
+          {/* Filters */}
+          <FilterBar
+            selectedCategory={category}
+            onCategoryChange={handleCategoryChange}
+            selectedStatus={status}
+            onStatusChange={handleStatusChange}
+            selectedSort={sort}
+            onSortChange={handleSortChange}
+          />
+
+          {/* Feedback Section */}
           <div>
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
                 Recent Feedback
+                {(category !== "All" || status !== "") && (
+                  <span className="ml-2 text-sm font-normal text-zinc-400">
+                    (Filtered)
+                  </span>
+                )}
               </h2>
+
               <span className="text-sm font-medium text-zinc-500">
-                {feedbacks.length} items found
+                {stats.totalFeedback} total items
               </span>
             </div>
 
             {feedbacks.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 p-20 dark:border-zinc-800">
-                <p className="text-zinc-500">
-                  No feedback submitted yet. Your users&apos; voices will appear here!
+              <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 p-20 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-900/10">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100 text-zinc-400 dark:bg-zinc-800">
+                  <Filter size={32} />
+                </div>
+                <p className="text-lg font-semibold text-zinc-900 dark:text-white">
+                  No results found
                 </p>
+                <p className="mt-1 text-zinc-500 text-sm">
+                  Try adjusting your filters.
+                </p>
+
+                {(category !== "All" || status !== "") && (
+                  <button
+                    onClick={() => {
+                      setCategory("All");
+                      setStatus("");
+                      setCurrentPage(1);
+                    }}
+                    className="mt-6 text-sm font-bold text-blue-600 hover:underline"
+                  >
+                    Clear all filters
+                  </button>
+                )}
               </div>
             ) : (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {feedbacks.map((item) => (
-                  <FeedbackCard key={item._id} feedback={item} />
-                ))}
-              </div>
+              <>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 relative">
+                  {loading && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/40 backdrop-blur-[1px] dark:bg-black/40">
+                      <Loader2 className="animate-spin text-blue-600" size={32} />
+                    </div>
+                  )}
+
+                  {feedbacks.map((item) => (
+                    <FeedbackCard
+                      key={item._id}
+                      feedback={item}
+                      onDelete={handleDeleteFeedback}
+                    />
+                  ))}
+                </div>
+
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              </>
             )}
           </div>
         </div>

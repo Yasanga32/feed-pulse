@@ -3,16 +3,19 @@
 import { useState } from "react";
 import { Feedback } from "@/types/feedback";
 import StatusBadge from "../shared/StatusBadge";
-import { Calendar, User, Mail, Sparkles, ChevronDown, AlertCircle } from "lucide-react";
-import { updateFeedback } from "@/lib/api";
+import { Calendar, User, Mail, Sparkles, ChevronDown, AlertCircle, Trash2, X } from "lucide-react";
+import { updateFeedback, deleteFeedback } from "@/lib/api";
 
 interface FeedbackCardProps {
   feedback: Feedback;
+  onDelete?: (id: string) => void;
 }
 
-export default function FeedbackCard({ feedback }: FeedbackCardProps) {
+export default function FeedbackCard({ feedback, onDelete }: FeedbackCardProps) {
   const [status, setStatus] = useState(feedback.status);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
   // Helper for priority color
@@ -60,8 +63,62 @@ export default function FeedbackCard({ feedback }: FeedbackCardProps) {
     }
   };
 
+  const handleDelete = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    setIsDeleting(true);
+    setUpdateError(null);
+
+    try {
+      const response = await deleteFeedback(token, feedback._id);
+      if (response.success) {
+        // Notify parent to remove from list
+        if (onDelete) onDelete(feedback._id);
+      } else {
+        throw new Error(response.message || "Failed to delete feedback");
+      }
+    } catch (err: any) {
+      setIsDeleting(false);
+      setShowConfirm(false);
+      setUpdateError("Failed to delete feedback");
+      console.error("Delete Error:", err);
+      setTimeout(() => setUpdateError(null), 3000);
+    }
+  };
+
   return (
-    <div className="group relative flex flex-col gap-5 rounded-2xl border border-zinc-200 bg-white p-6 transition-all hover:border-blue-500/30 hover:shadow-xl hover:shadow-zinc-200/50 dark:border-zinc-800 dark:bg-zinc-900/50 dark:hover:border-blue-500/30 dark:hover:shadow-none">
+    <div className={`group relative flex flex-col gap-5 rounded-2xl border border-zinc-200 bg-white p-6 transition-all duration-500 ${isDeleting ? "scale-95 opacity-0 grayscale" : "hover:border-blue-500/30 hover:shadow-xl hover:shadow-zinc-200/50 dark:border-zinc-800 dark:bg-zinc-900/50 dark:hover:border-blue-500/30 dark:hover:shadow-none"}`}>
+      
+      {/* Delete Controls - Absolute Positioned */}
+      <div className="absolute right-20 top-6 z-20 flex items-center gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
+        {!showConfirm ? (
+          <button
+            onClick={() => setShowConfirm(true)}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-100 text-zinc-400 transition-all hover:bg-red-50 hover:text-red-500 dark:bg-zinc-800 dark:text-zinc-500 dark:hover:bg-red-900/20"
+            title="Delete feedback"
+          >
+            <Trash2 size={14} />
+          </button>
+        ) : (
+          <div className="flex items-center gap-1 overflow-hidden rounded-full bg-red-50 p-0.5 animate-in slide-in-from-right-2 duration-300 dark:bg-red-900/20">
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="px-3 py-1 text-[10px] font-bold text-red-600 hover:text-red-700 dark:text-red-400"
+            >
+              Confirm?
+            </button>
+            <button
+              onClick={() => setShowConfirm(false)}
+              className="flex h-6 w-6 items-center justify-center rounded-full text-zinc-400 hover:bg-white hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+            >
+              <X size={12} />
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Top Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1.5">
@@ -76,7 +133,7 @@ export default function FeedbackCard({ feedback }: FeedbackCardProps) {
               />
               <select
                 value={status}
-                disabled={isUpdating}
+                disabled={isUpdating || isDeleting}
                 onChange={(e) => handleStatusChange(e.target.value)}
                 className="absolute inset-0 w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
               >
