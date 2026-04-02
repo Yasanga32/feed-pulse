@@ -8,6 +8,7 @@ import StatsBar from "@/components/dashboard/StatsBar";
 import FeedbackCard from "@/components/dashboard/FeedbackCard";
 import FilterBar from "@/components/dashboard/FilterBar";
 import Pagination from "@/components/dashboard/Pagination";
+import SummarySection from "@/components/dashboard/SummarySection";
 import { LayoutDashboard, Loader2, AlertCircle, RefreshCw, Filter } from "lucide-react";
 
 interface Stats {
@@ -23,6 +24,7 @@ interface QueryParams {
   sort: string;
   category?: string;
   status?: string;
+  search?: string;
 }
 
 export default function DashboardPage() {
@@ -41,6 +43,8 @@ export default function DashboardPage() {
   const [category, setCategory] = useState("All");
   const [status, setStatus] = useState("");
   const [sort, setSort] = useState("date");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -68,6 +72,7 @@ export default function DashboardPage() {
 
       if (category !== "All") queryParams.category = category;
       if (status !== "") queryParams.status = status;
+      if (debouncedSearchTerm) queryParams.search = debouncedSearchTerm;
 
       // Fetch both stats and feedback list
       const [statsRes, feedbackRes] = await Promise.all([
@@ -99,7 +104,17 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [category, status, sort, currentPage, router]);
+  }, [category, status, sort, debouncedSearchTerm, currentPage, router]);
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1); // Reset to page 1 on new search
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Re-fetch whenever filters change
   useEffect(() => {
@@ -190,6 +205,7 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="space-y-12">
+          <SummarySection />
           {/* Stats */}
           <StatsBar stats={stats} />
 
@@ -201,6 +217,8 @@ export default function DashboardPage() {
             onStatusChange={handleStatusChange}
             selectedSort={sort}
             onSortChange={handleSortChange}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
           />
 
           {/* Feedback Section */}
@@ -232,11 +250,12 @@ export default function DashboardPage() {
                   Try adjusting your filters.
                 </p>
 
-                {(category !== "All" || status !== "") && (
+                {(category !== "All" || status !== "" || searchTerm !== "") && (
                   <button
                     onClick={() => {
                       setCategory("All");
                       setStatus("");
+                      setSearchTerm("");
                       setCurrentPage(1);
                     }}
                     className="mt-6 text-sm font-bold text-blue-600 hover:underline"
