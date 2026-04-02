@@ -117,14 +117,26 @@ export const getFeedbacks = async (req: Request, res: Response) => {
         const pageNumber = Number(page);
         const limitNumber = Number(limit);
 
-        const feedbacks = await Feedback.find(filter)
-            .sort(sortOption)
-            .skip((pageNumber - 1) * limitNumber)
-            .limit(limitNumber);
+        const [feedbacks, totalItems] = await Promise.all([
+            Feedback.find(filter)
+                .sort(sortOption)
+                .skip((pageNumber - 1) * limitNumber)
+                .limit(limitNumber),
+            Feedback.countDocuments(filter)
+        ]);
+
+        const totalPages = Math.ceil(totalItems / limitNumber);
 
         return res.status(200).json({
             success: true,
-            data: feedbacks,
+            data: {
+                feedbacks,
+                pagination: {
+                    totalItems,
+                    totalPages,
+                    currentPage: pageNumber
+                }
+            },
             error: null,
             message: "Feedbacks fetched successfully"
         });
