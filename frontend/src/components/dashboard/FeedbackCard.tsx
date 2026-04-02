@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Feedback } from "@/types/feedback";
 import StatusBadge from "../shared/StatusBadge";
-import { Calendar, User, Mail, Sparkles, ChevronDown, AlertCircle, Trash2, X } from "lucide-react";
-import { updateFeedback, deleteFeedback } from "@/lib/api";
+import { Calendar, User, Mail, Sparkles, ChevronDown, AlertCircle, Trash2, X, RefreshCw } from "lucide-react";
+import { updateFeedback, deleteFeedback, reAnalyzeFeedback } from "@/lib/api";
 
 interface FeedbackCardProps {
   feedback: Feedback;
@@ -16,7 +16,9 @@ export default function FeedbackCard({ feedback, onDelete }: FeedbackCardProps) 
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
+  const [localFeedback, setLocalFeedback] = useState(feedback);
 
   // Helper for priority color
   const getPriorityColor = (priority?: number) => {
@@ -87,6 +89,29 @@ export default function FeedbackCard({ feedback, onDelete }: FeedbackCardProps) 
     }
   };
 
+  const handleReAnalyze = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    setIsAnalyzing(true);
+    setUpdateError(null);
+
+    try {
+      const response = await reAnalyzeFeedback(token, localFeedback._id);
+      if (response.success) {
+        setLocalFeedback(response.data);
+      } else {
+        throw new Error(response.message || "AI Analysis failed");
+      }
+    } catch (err: any) {
+      setUpdateError("AI analysis failed");
+      console.error("AI Error:", err);
+      setTimeout(() => setUpdateError(null), 3000);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   return (
     <div className={`group relative flex flex-col gap-5 rounded-2xl border border-zinc-200 bg-white p-6 transition-all duration-500 ${isDeleting ? "scale-95 opacity-0 grayscale" : "hover:border-blue-500/30 hover:shadow-xl hover:shadow-zinc-200/50 dark:border-zinc-800 dark:bg-zinc-900/50 dark:hover:border-blue-500/30 dark:hover:shadow-none"}`}>
       
@@ -117,6 +142,16 @@ export default function FeedbackCard({ feedback, onDelete }: FeedbackCardProps) 
             </button>
           </div>
         )}
+
+        {/* AI Re-analyze Button */}
+        <button
+          onClick={handleReAnalyze}
+          disabled={isAnalyzing || isDeleting}
+          className={`flex h-8 w-8 items-center justify-center rounded-full bg-zinc-100 text-zinc-400 transition-all hover:bg-blue-50 hover:text-blue-600 dark:bg-zinc-800 dark:text-zinc-500 dark:hover:bg-blue-900/20 ${isAnalyzing ? "animate-spin text-blue-600" : ""}`}
+          title="Re-run AI Analysis"
+        >
+          <RefreshCw size={14} />
+        </button>
       </div>
 
       {/* Top Header */}
@@ -147,17 +182,17 @@ export default function FeedbackCard({ feedback, onDelete }: FeedbackCardProps) 
             </div>
 
             <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-              {feedback.category}
+              {localFeedback.category}
             </span>
           </div>
           <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
-            {feedback.title}
+            {localFeedback.title}
           </h3>
         </div>
         
         {/* Priority Badge */}
-        <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl font-bold ${getPriorityColor(feedback.ai_priority)}`}>
-          {feedback.ai_priority || "–"}
+        <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl font-bold ${getPriorityColor(localFeedback.ai_priority)}`}>
+          {localFeedback.ai_priority || "–"}
         </div>
       </div>
 
@@ -175,14 +210,14 @@ export default function FeedbackCard({ feedback, onDelete }: FeedbackCardProps) 
       </p>
 
       {/* AI Summary (if available) */}
-      {feedback.ai_summary && (
+      {localFeedback.ai_summary && (
         <div className="rounded-xl bg-blue-50/50 p-4 dark:bg-blue-900/10">
           <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">
             <Sparkles size={12} />
             AI Summary
           </div>
           <p className="text-xs italic leading-5 text-blue-900 dark:text-blue-300">
-            "{feedback.ai_summary}"
+            "{localFeedback.ai_summary}"
           </p>
         </div>
       )}
@@ -192,31 +227,31 @@ export default function FeedbackCard({ feedback, onDelete }: FeedbackCardProps) 
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
             <Calendar size={14} />
-            {formatDate(feedback.createdAt)}
+            {formatDate(localFeedback.createdAt)}
           </div>
           <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
             <User size={14} />
-            {feedback.submitterName || "Anonymous"}
+            {localFeedback.submitterName || "Anonymous"}
           </div>
         </div>
 
         <div className="flex flex-col items-end justify-between gap-2">
-          {feedback.ai_sentiment && (
-            <StatusBadge type="sentiment" value={feedback.ai_sentiment} />
+          {localFeedback.ai_sentiment && (
+            <StatusBadge type="sentiment" value={localFeedback.ai_sentiment} />
           )}
-          {feedback.submitterEmail && (
+          {localFeedback.submitterEmail && (
             <div className="flex items-center gap-2 text-[10px] text-zinc-400 dark:text-zinc-500 italic truncate max-w-full">
               <Mail size={12} />
-              {feedback.submitterEmail}
+              {localFeedback.submitterEmail}
             </div>
           )}
         </div>
       </div>
 
       {/* AI Tags */}
-      {feedback.ai_tags && feedback.ai_tags.length > 0 && (
+      {localFeedback.ai_tags && localFeedback.ai_tags.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-1.5">
-          {feedback.ai_tags.map((tag) => (
+          {localFeedback.ai_tags.map((tag) => (
             <span key={tag} className="rounded-md bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
               #{tag}
             </span>

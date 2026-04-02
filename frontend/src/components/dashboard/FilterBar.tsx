@@ -1,6 +1,6 @@
 "use client";
 
-import { Filter, ChevronDown, ArrowUpDown, Clock, Zap, Smile } from "lucide-react";
+import { Filter, ChevronDown, ArrowUpDown, Clock, Zap, Smile, Search } from "lucide-react";
 
 interface FilterBarProps {
   selectedCategory: string;
@@ -9,6 +9,8 @@ interface FilterBarProps {
   onStatusChange: (status: string) => void;
   selectedSort: string;
   onSortChange: (sort: string) => void;
+  searchTerm: string;
+  onSearchChange: (search: string) => void;
 }
 
 const CATEGORIES = ["All", "Bug", "Feature Request", "Improvement", "Other"];
@@ -26,11 +28,27 @@ export default function FilterBar({
   onStatusChange,
   selectedSort,
   onSortChange,
+  searchTerm,
+  onSearchChange,
 }: FilterBarProps) {
   const currentSort = SORTS.find(s => s.value === selectedSort) || SORTS[0];
 
   return (
     <div className="flex flex-col gap-4 rounded-2xl bg-zinc-50/50 p-2 dark:bg-zinc-900/30 lg:flex-row lg:items-center lg:justify-between lg:p-4">
+      {/* Search Bar */}
+      <div className="relative flex flex-1 items-center">
+        <div className="absolute left-3 text-zinc-400">
+          <Search size={18} />
+        </div>
+        <input
+          type="text"
+          placeholder="Search feedback..."
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="h-10 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-4 text-sm font-medium text-zinc-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white dark:focus:border-blue-400 lg:max-w-xs"
+        />
+      </div>
+
       {/* Category Tabs */}
       <div className="flex items-center gap-1 overflow-x-auto pb-2 lg:pb-0 scrollbar-none">
         <div className="mr-2 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-zinc-200/50 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
