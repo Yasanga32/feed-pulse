@@ -29,7 +29,14 @@ export const adminLogin = async (credentials: { email: string; password: string 
  */
 export const getFeedbacks = async (
   token: string, 
-  params: { category?: string; status?: string; search?: string; page?: number } = {}
+  params: { 
+    category?: string; 
+    status?: string; 
+    search?: string; 
+    sort?: string; 
+    page?: number; 
+    limit?: number 
+  } = {}
 ) => {
   const response = await api.get("/feedback", {
     headers: { Authorization: `Bearer ${token}` },
