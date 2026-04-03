@@ -6,7 +6,7 @@ import { feedbackLimiter } from "../middleware/rateLimit.middleware.js";
 
 const feedbackRouter = Router();
 
-console.log("FeedbackRouter: authMiddleware is:", typeof authMiddleware);
+
 
 const feedbackValidator = [
     body("title")

@@ -98,8 +98,10 @@ export default function DashboardPage() {
         setError("Failed to fetch some dashboard data.");
       }
 
-    } catch (err: unknown) {
-      setError("An error occurred while connecting to the backend.");
+    } catch (err: any) {
+      const statusMsg = err.response ? ` (Status: ${err.response.status})` : "";
+      const errorDetail = err.response?.data?.message || err.message || "";
+      setError(`An error occurred while connecting to the backend.${statusMsg}. ${errorDetail}`);
       console.error("Dashboard Fetch Error:", err);
     } finally {
       setLoading(false);

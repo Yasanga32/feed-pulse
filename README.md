@@ -1,4 +1,4 @@
-# FeedPulse — AI-Powered Product Feedback Platform
+# FeedPulse AI Powered Product Feedback Platform
 
 FeedPulse is a professional internal tool designed to collect, analyze, and manage product feedback. By leveraging **Google Gemini AI**, FeedPulse automatically categorizes, prioritizes, and summarizes user feedback, providing product teams with instant clarity on what to build next.
 
@@ -69,7 +69,7 @@ cd feed-pulse
 ### 4. Frontend Configuration
 1. Navigate to `frontend/`.
 2. Install dependencies: `npm install`.
-3. Start the dev server: `npm run dev` (it will run on [http://localhost:3001](http://localhost:3001)).
+3. Start the dev server: `npm run dev` (it will run on [http://localhost:3000](http://localhost:3000)).
 
 ---
 
@@ -100,26 +100,22 @@ The easiest way to run FeedPulse is using Docker Compose.
 
 ## 📸 Screenshots
 
-### 🌍 Landing Page
-*Capture a screenshot of your landing page and place it in a `/screenshots` folder.*
-![Landing Page](/screenshots/landing.png)
-
-
+### 🌍 Feedback Submission Page
+![Feedback Page](./screenshots/feedback.png)
 
 ### 📊 Admin Dashboard
-*Capture a screenshot of your dashboard showing stats and feedback cards.*
-![Dashboard](/screenshots/dashboard.png)
+![Dashboard](./screenshots/dashboard.png)
 
----
 
-## 🔮 What's Next? (Requirement 6.6)
+
+## 🔮 What's Next? (If i had more time)
 
 Given more time, I would focus on the following engineering improvements:
-1. **Automated Testing**: Implementing **Jest** unit tests for the core AI service and API endpoints.
-3. **Enhanced Security**: Moving admin credentials from environment variables to a dedicated, encrypted **User collection** in the database.
-4. **Data Visualization**: Adding interactive charts (e.g., Recharts) to track sentiment trends over time graphically.
 
----
+1. **Integration Testing**: Expand current Jest unit tests to include full integration testing across services.
+2. **Mobile Responsiveness**: Enhance dashboard layout for mobile devices.
+3. **Enhanced Security**: Move admin credentials into a secure User collection with hashed passwords.
+4. **Data Visualization**: Add interactive charts to track sentiment and feedback trends.
 
 ## 📄 License
 This project is part of a Software Engineer Intern Assignment. Licensed under the MIT License.
