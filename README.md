@@ -73,11 +73,38 @@ cd feed-pulse
 
 ---
 
+## 🐳 Docker Setup (Recommended)
+
+The easiest way to run FeedPulse is using Docker Compose.
+
+### 1. Prerequisites
+- [Docker](https://docs.docker.com/get-docker/) installed.
+- [Docker Compose](https://docs.docker.com/compose/install/) installed.
+
+### 2. Run with One Command
+1. From the project root, run:
+   ```bash
+   # Set your Gemini API Key first
+   $env:GEMINI_API_KEY="your_key_here" # Windows PowerShell
+   # Or for Linux/Mac: export GEMINI_API_KEY="your_key_here"
+
+   docker-compose up --build
+   ```
+2. The application will be available at:
+   - **Frontend**: [http://localhost:3000](http://localhost:3000)
+   - **Backend API**: [http://localhost:4000/api](http://localhost:4000/api)
+
+   Docker Compose runs all services (frontend, backend, and MongoDB) in isolated containers while exposing only the required ports.
+
+---
+
 ## 📸 Screenshots
 
 ### 🌍 Landing Page
 *Capture a screenshot of your landing page and place it in a `/screenshots` folder.*
 ![Landing Page](/screenshots/landing.png)
+
+
 
 ### 📊 Admin Dashboard
 *Capture a screenshot of your dashboard showing stats and feedback cards.*
@@ -88,8 +115,7 @@ cd feed-pulse
 ## 🔮 What's Next? (Requirement 6.6)
 
 Given more time, I would focus on the following engineering improvements:
-1. **Containerization**: Wrapping the application in **Docker** for seamless "one-command" deployment.
-2. **Automated Testing**: Implementing **Jest** unit tests for the core AI service and API endpoints.
+1. **Automated Testing**: Implementing **Jest** unit tests for the core AI service and API endpoints.
 3. **Enhanced Security**: Moving admin credentials from environment variables to a dedicated, encrypted **User collection** in the database.
 4. **Data Visualization**: Adding interactive charts (e.g., Recharts) to track sentiment trends over time graphically.
 
