@@ -1,0 +1,36 @@
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - '3000:3000'
+    environment:
+      # Next.js client-side code runs in the browser, so it needs to access the backend on the host machine's port.
+      - NEXT_PUBLIC_API_URL=http://localhost:4000/api
+    depends_on:
+      - backend
+
+  backend:
+    build: ./backend
+    ports:
+      - '4000:4000'
+    restart: always
+    environment:
+      - MONGODB_URL=mongodb://mongo:27017
+      # GEMINI_API_KEY is pulled from the host environment where docker-compose is run: ${GEMINI_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - JWT_SECRET=super_secret_docker_key_123
+      - ADMIN_EMAIL=admin@gmail.com
+      - ADMIN_PASSWORD=admin123
+      - PORT=4000
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:7
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
