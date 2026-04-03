@@ -1,8 +1,8 @@
 import axios from "axios";
 import { Feedback } from "../types/feedback";
 
-// Base API URL - pointing to your backend
-const API_URL = "http://localhost:5000/api";
+// Base API URL - dynamic for Docker support, falls back to local setup
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 const api = axios.create({
   baseURL: API_URL,
