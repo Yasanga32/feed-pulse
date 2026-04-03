@@ -2,6 +2,12 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Accept build argument
+ARG NEXT_PUBLIC_API_URL
+
+# Set env variable
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Copy package files
 COPY package*.json ./
 
