@@ -8,6 +8,12 @@ const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash"
 });
 
+export const extractJSON = (text: string) => {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+    return JSON.parse(jsonMatch[0]);
+};
+
 // Analyze Single Feedback
 export const analyzeFeedback = async (
     title: string,
@@ -24,15 +30,10 @@ Description: ${description}
 `;
 
         const result = await model.generateContent(prompt);
-
         const response = result.response;
         const text = response.text();
 
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-
-        if (!jsonMatch) return null;
-
-        return JSON.parse(jsonMatch[0]);
+        return extractJSON(text);
 
     } catch (error: any) {
         console.error("Gemini error:", error.message);
@@ -69,4 +70,9 @@ export const analyzeSummary = async (text: string) => {
         console.error("Summary error:", error);
         return null;
     }
+};
+
+export const geminiService = {
+    analyzeFeedback,
+    analyzeSummary
 };
