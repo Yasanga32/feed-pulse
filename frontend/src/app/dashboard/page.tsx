@@ -90,8 +90,10 @@ export default function DashboardPage() {
       }
 
       if (feedbackRes.success) {
-        setFeedbacks(feedbackRes.data.feedbacks);
-        setTotalPages(feedbackRes.data.pagination.totalPages);
+        setFeedbacks(feedbackRes.data.feedbacks || []);
+        // Defensive check for pagination data
+        const total = feedbackRes.data.pagination?.totalPages || 1;
+        setTotalPages(total);
       }
 
       if (!statsRes.success || !feedbackRes.success) {

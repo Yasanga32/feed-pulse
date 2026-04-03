@@ -76,21 +76,20 @@ export const createFeedback = async (req: Request, res: Response) => {
 
 export const getFeedbacks = async (req: Request, res: Response) => {
     try {
-
         const { category, status, page = 1, limit = 10, sort, search } = req.query;
 
-        // Filtering
+        // 1. Build Filter Object (Filtering & Searching)
         const filter: any = {};
 
-        if (category) {
+        if (category && category !== "All") {
             filter.category = category;
         }
 
-        if (status) {
+        if (status && status !== "") {
             filter.status = status;
         }
 
-        // Simple Search
+        // Search: checks title and AI-generated summary
         if (search) {
             filter.$or = [
                 { title: { $regex: search, $options: "i" } },
@@ -98,24 +97,21 @@ export const getFeedbacks = async (req: Request, res: Response) => {
             ];
         }
 
-        // Sorting
-        let sortOption: any = { createdAt: -1 };
+        // 2. Determine Sort Option
+        let sortOption: any = { createdAt: -1 }; // Default: Newest First
 
         if (sort === "priority") {
-            sortOption = { ai_priority: -1 };
+            sortOption = { ai_priority: -1 }; // Highest score first
+        } else if (sort === "date") {
+            sortOption = { createdAt: -1 }; // Newest first
+        } else if (sort === "sentiment") {
+            // Sorts alphabetically: Negative -> Neutral -> Positive (approximate)
+            sortOption = { ai_sentiment: 1 }; 
         }
 
-        if (sort === "date") {
-            sortOption = { createdAt: -1 };
-        }
-
-        if (sort === "sentiment") {
-            sortOption = { ai_sentiment: 1 }; // Typically sorts "Negative" < "Neutral" < "Positive" or similar.
-        }
-
-        // Pagination
-        const pageNumber = Number(page);
-        const limitNumber = Number(limit);
+        // 3. Execution with Pagination
+        const pageNumber = Math.max(1, Number(page) || 1);
+        const limitNumber = Math.max(1, Number(limit) || 10);
 
         const [feedbacks, totalItems] = await Promise.all([
             Feedback.find(filter)
@@ -125,7 +121,7 @@ export const getFeedbacks = async (req: Request, res: Response) => {
             Feedback.countDocuments(filter)
         ]);
 
-        const totalPages = Math.ceil(totalItems / limitNumber);
+        const totalPages = Math.ceil(totalItems / limitNumber) || 1;
 
         return res.status(200).json({
             success: true,

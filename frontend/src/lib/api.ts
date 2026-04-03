@@ -2,7 +2,7 @@ import axios from "axios";
 import { Feedback } from "../types/feedback";
 
 // Base API URL - dynamic for Docker support, falls back to local setup
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 const api = axios.create({
   baseURL: API_URL,
@@ -29,7 +29,14 @@ export const adminLogin = async (credentials: { email: string; password: string 
  */
 export const getFeedbacks = async (
   token: string, 
-  params: { category?: string; status?: string; search?: string; page?: number } = {}
+  params: { 
+    category?: string; 
+    status?: string; 
+    search?: string; 
+    sort?: string; 
+    page?: number; 
+    limit?: number 
+  } = {}
 ) => {
   const response = await api.get("/feedback", {
     headers: { Authorization: `Bearer ${token}` },
