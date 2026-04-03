@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { validationResult } from "express-validator";
 import { Feedback } from "../models/feedback.model.js";
-import { analyzeFeedback, analyzeSummary } from "../services/gemini.service.js";
+import { geminiService } from "../services/gemini.service.js";
 
 export const createFeedback = async (req: Request, res: Response) => {
     try {
@@ -28,7 +28,7 @@ export const createFeedback = async (req: Request, res: Response) => {
 
         // Run AI analysis BEFORE sending response
         try {
-            const analysis = await analyzeFeedback(title, description);
+            const analysis = await geminiService.analyzeFeedback(title, description);
 
             if (analysis) {
                 const updated = await Feedback.findByIdAndUpdate(
@@ -280,7 +280,7 @@ export const reAnalyzeFeedback = async (req: Request, res: Response) => {
         }
 
         // Re-call Gemini
-        const analysis = await analyzeFeedback(feedback.title, feedback.description);
+        const analysis = await geminiService.analyzeFeedback(feedback.title, feedback.description);
 
         if (!analysis) {
             return res.status(500).json({
@@ -378,7 +378,7 @@ export const getFeedbackSummary = async (req: Request, res: Response) => {
             .join("\n\n");
 
         // send to gemini
-        const summary = await analyzeSummary(combinedText);
+        const summary = await geminiService.analyzeSummary(combinedText);
 
         return res.status(200).json({
             success: true,

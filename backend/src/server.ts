@@ -27,6 +27,8 @@ const startServer = async () => {
 app.use('/api/feedback', feedbackRouter);
 app.use("/api/auth", authRoutes);
 
-startServer();
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
 
 export default app;
