@@ -9,8 +9,18 @@ const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   let token;
 
+  // Check Authorization Header
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
+  } 
+  // Check Cookies (oncoSahana uses cookies)
+  else if (req.headers.cookie) {
+    const cookies = req.headers.cookie.split(';').reduce((acc: any, cookie) => {
+      const [key, value] = cookie.trim().split('=');
+      acc[key] = value;
+      return acc;
+    }, {});
+    token = cookies.token;
   }
 
   if (!token) {
