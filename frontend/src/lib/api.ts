@@ -20,7 +20,7 @@ export const submitFeedback = async (data: Partial<Feedback>) => {
  * Admin: Login to get a token
  */
 export const adminLogin = async (credentials: { email: string; password: string }) => {
-  const response = await api.post("/auth/login", credentials);
+  const response = await api.post("/auth/login", { ...credentials, appId: "standalone" });
   return response.data;
 };
 
