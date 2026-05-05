@@ -4,21 +4,21 @@ import jwt from "jsonwebtoken";
 export const adminLogin = async (req: Request, res: Response) => {
     try {
 
-        const { email, password } = req.body;
+        const { email, password, appId } = req.body;
 
         // Hardcoded admin credentials from .env
         const ADMIN_EMAIL = process.env.ADMIN_EMAIL?.trim();
         const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD?.trim();
 
-        console.log("Login attempt:", { email, password });
+        console.log("Login attempt:", { email, password, appId });
         console.log("Expected credentials:", { ADMIN_EMAIL, ADMIN_PASSWORD });
 
-        if (!email || !password) {
+        if (!email || !password || !appId) {
             return res.status(400).json({
                 success: false,
                 data: null,
                 error: "Bad Request",
-                message: "Email and password required"
+                message: "Email, password and appId are required"
             });
         }
 
@@ -33,9 +33,9 @@ export const adminLogin = async (req: Request, res: Response) => {
             });
         }
 
-        console.log("Login success for admin");
+        console.log("Login success for admin in app:", appId);
         const token = jwt.sign(
-            { email: email.trim(), role: "admin", appId: process.env.APP_ID || 'standalone' },
+            { email: email.trim(), role: "admin", appId },
             process.env.JWT_SECRET as string,
             { expiresIn: "1d" }
         );
