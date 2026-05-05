@@ -16,6 +16,7 @@ export const createFeedback = async (req: Request, res: Response) => {
         }
 
         const { title, description, category, submitterName, submitterEmail } = req.body;
+        const appId = (req as any).user?.appId || req.body.appId || req.headers['x-app-id'] || process.env.APP_ID || 'standalone';
 
         // creating feedback in db
         const feedback = await Feedback.create({
@@ -23,7 +24,8 @@ export const createFeedback = async (req: Request, res: Response) => {
             description,
             category,
             submitterName,
-            submitterEmail
+            submitterEmail,
+            appId
         });
 
         // Run AI analysis BEFORE sending response
@@ -79,7 +81,8 @@ export const getFeedbacks = async (req: Request, res: Response) => {
         const { category, status, page = 1, limit = 10, sort, search } = req.query;
 
         // 1. Build Filter Object (Filtering & Searching)
-        const filter: any = {};
+        const appId = (req as any).user?.appId;
+        const filter: any = { appId };
 
         if (category && category !== "All") {
             filter.category = category;
@@ -151,13 +154,18 @@ export const getFeedbacks = async (req: Request, res: Response) => {
 
 export const getFeedbackStats = async (req: Request, res: Response) => {
     try {
-        const total = await Feedback.countDocuments();
+        const appId = (req as any).user?.appId;
+        const filter = { appId };
+
+        const total = await Feedback.countDocuments(filter);
 
         const open = await Feedback.countDocuments({
+            ...filter,
             status: "New"
         });
 
         const avgPriority = await Feedback.aggregate([
+            { $match: filter },
             {
                 $group: {
                     _id: null,
@@ -167,6 +175,7 @@ export const getFeedbackStats = async (req: Request, res: Response) => {
         ]);
 
         const topTags = await Feedback.aggregate([
+            { $match: filter },
             { $unwind: "$ai_tags" },
             {
                 $group: {
@@ -204,7 +213,8 @@ export const getFeedbackStats = async (req: Request, res: Response) => {
 export const getFeedbackById = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const feedback = await Feedback.findById(id);
+        const appId = (req as any).user?.appId;
+        const feedback = await Feedback.findOne({ _id: id, appId });
 
         if (!feedback) {
             return res.status(404).json({
@@ -234,7 +244,8 @@ export const getFeedbackById = async (req: Request, res: Response) => {
 export const updateFeedback = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const feedback = await Feedback.findByIdAndUpdate(id, req.body, { new: true });
+        const appId = (req as any).user?.appId;
+        const feedback = await Feedback.findOneAndUpdate({ _id: id, appId }, req.body, { new: true });
 
         if (!feedback) {
             return res.status(404).json({
@@ -264,7 +275,8 @@ export const updateFeedback = async (req: Request, res: Response) => {
 export const reAnalyzeFeedback = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const feedback = await Feedback.findById(id);
+        const appId = (req as any).user?.appId;
+        const feedback = await Feedback.findOne({ _id: id, appId });
 
         if (!feedback) {
             return res.status(404).json({
@@ -288,8 +300,8 @@ export const reAnalyzeFeedback = async (req: Request, res: Response) => {
         }
 
         // Update with new results
-        const updated = await Feedback.findByIdAndUpdate(
-            id,
+        const updated = await Feedback.findOneAndUpdate(
+            { _id: id, appId },
             {
                 ai_category: analysis.category,
                 ai_sentiment: analysis.sentiment,
@@ -321,7 +333,8 @@ export const reAnalyzeFeedback = async (req: Request, res: Response) => {
 export const deleteFeedback = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const feedback = await Feedback.findByIdAndDelete(id);
+        const appId = (req as any).user?.appId;
+        const feedback = await Feedback.findOneAndDelete({ _id: id, appId });
 
         if (!feedback) {
             return res.status(404).json({
@@ -350,12 +363,14 @@ export const deleteFeedback = async (req: Request, res: Response) => {
 
 export const getFeedbackSummary = async (req: Request, res: Response) => {
     try {
+        const appId = (req as any).user?.appId;
         // last 7 days date
         const lastWeek = new Date();
         lastWeek.setDate(lastWeek.getDate() - 7);
 
         // get feedback from last 7 days
         const feedback = await Feedback.find({
+            appId,
             createdAt: { $gte: lastWeek }
         });
 

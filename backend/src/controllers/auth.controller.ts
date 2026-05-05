@@ -35,7 +35,7 @@ export const adminLogin = async (req: Request, res: Response) => {
 
         console.log("Login success for admin");
         const token = jwt.sign(
-            { email: email.trim(), role: "admin" },
+            { email: email.trim(), role: "admin", appId: process.env.APP_ID || 'standalone' },
             process.env.JWT_SECRET as string,
             { expiresIn: "1d" }
         );

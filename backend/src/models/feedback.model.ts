@@ -20,6 +20,12 @@ const feedbackSchema = new mongoose.Schema(
             required: true
         },
 
+        appId: {
+            type: String,
+            required: true,
+            index: true
+        },
+
         status: {
             type: String,
             enum: ["New", "In Review", "Resolved"],
